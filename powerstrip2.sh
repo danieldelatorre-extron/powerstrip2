@@ -78,10 +78,18 @@ else
         cmd="wp${port}*${state}dcpp\r"
     fi
 
+    ping "$ip" -c 1 -W 1 > /dev/null 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "Error: Host $ip is unreachable."
+        exit 1
+    fi
+
     printf '%b' "$cmd" | timeout 3s \
-    sshpass -p "$password" ssh -tt -p 22023 \
-        -o ConnectTimeout=3 \
-        -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        "$username@$ip"
+        sshpass -p "$password" ssh -tt -p 22023 \
+            -o ConnectionAttempts=1 \
+            -o ConnectTimeout=1 \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$username@$ip"
 fi
