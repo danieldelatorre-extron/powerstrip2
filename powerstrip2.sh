@@ -23,6 +23,12 @@ usage()
     exit 1
 }
 
+if ! command -v sshpass &> /dev/null
+then
+    echo "Error: sshpass is not installed. To install it, try 'sudo apt install sshpass'."
+    exit 1
+fi
+
 while getopts "i:p:u:p:hP:t:" opt
 do
     case $opt in
@@ -72,5 +78,10 @@ else
         cmd="wp${port}*${state}dcpp\r"
     fi
 
-    timeout 3s bash -c "printf '$cmd' | sshpass -p ${password} ssh -tt -p 22023 ${username}@${ip}"
+printf '%b' "$cmd" | timeout 3s \
+sshpass -p "$password" ssh -tt -p 22023 \
+  -o ConnectTimeout=3 \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null \
+  "$username@$ip"
 fi
