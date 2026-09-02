@@ -8,6 +8,7 @@ type="ac"
 ip=""
 port=""
 state=""
+sleep_toggle=2
 
 usage()
 {
@@ -20,6 +21,7 @@ usage()
     echo "    -u username   Username, default is '${username}'."
     echo "    -P password   Password, default is '${password}'."
     echo "    -t type       Power type, default is '${type}'."
+    echo "    -s sleep      Sleep in between toggle, default is ${sleep_toggle}s."
     exit 1
 }
 
@@ -29,7 +31,7 @@ then
     exit 1
 fi
 
-while getopts "i:p:u:p:hP:t:" opt
+while getopts "i:p:u:p:hP:t:s:" opt
 do
     case $opt in
         i)
@@ -43,6 +45,9 @@ do
             ;;
         P)
             password=$OPTARG
+            ;;
+        s)
+            sleep_toggle=$OPTARG
             ;;
         t)
             type=$OPTARG
@@ -68,9 +73,14 @@ set_power()
         cmd="wp${port}*${val}dcpp\r"
     fi
 
-    printf '%b' "$cmd" | timeout 3s \
-        sshpass -p "$password" ssh -tt -p 22023 \
-            -o ConnectionAttempts=1 \
+    # Allow greeting to finish printing, send the command, then send ctl+c.
+    {
+        sleep 1.7
+        printf '%b' "${cmd}"
+        sleep 0.5
+        printf '\003'
+    } | timeout --signal=INT 4s sshpass -p "$password" ssh -tt -p 22023 \
+            -o ConnectionAttempts=2 \
             -o ConnectTimeout=1 \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
@@ -102,6 +112,7 @@ else
             ;;
         t|T)
             set_power 0
+            sleep "$sleep_toggle"
             set_power 1
             ;;
         *)
