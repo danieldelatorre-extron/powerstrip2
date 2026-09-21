@@ -75,7 +75,7 @@ set_power()
 
     # Allow greeting to finish printing, send the command, then send ctl+c.
     {
-        sleep 1.7
+        sleep 2
         printf '%b' "${cmd}"
         sleep 0.5
         printf '\003'
